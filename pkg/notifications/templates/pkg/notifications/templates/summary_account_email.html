@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resumen mensual de transacciones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #666666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Stori_Logo_2023.svg" alt="Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
+        <h2>Resumen mensual de transacciones para {{ .ClientName }}</h2>
+        <p>Estimado/a {{ .ClientName }}, a continuación se presenta el resumen mensual de sus transacciones hasta la fecha:</p>
+        <table>
+            <tr>
+                <th>Total balance</th>
+                <td>{{ .TotalBalance }}</td>
+            </tr>
+            <tr>
+                <th>Número de transacciones en julio</th>
+                <td>{{ .TransactionsInJuly }}</td>
+            </tr>
+            <tr>
+                <th>Número de transacciones en agosto</th>
+                <td>{{ .TransactionsInAugust }}</td>
+            </tr>
+            <tr>
+                <th>Promedio del monto de débito</th>
+                <td>{{ .AverageDebitAmount }}</td>
+            </tr>
+            <tr>
+                <th>Promedio del monto de crédito</th>
+                <td>{{ .AverageCreditAmount }}</td>
+            </tr>
+        </table>
+        <p class="footer">Gracias por confiar en nosotros.</p>
+    </div>
+</body>
+</html>

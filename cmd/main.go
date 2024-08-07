@@ -1,14 +1,21 @@
 package main
 
 import (
-	"github.com/dayroromero/storiChallenge/pkg/csv"
-	"github.com/dayroromero/storiChallenge/pkg/db"
+	"log"
+
+	"github.com/dayroromero/storiChallenge/pkg/notifications"
+	"github.com/dayroromero/storiChallenge/utils"
 )
 
 func main() {
-	dbUrl := "postgres://postgres:postgres@localhost:5432/stori"
 
-	db.Init(dbUrl)
-
-	csv.File_processor()
+	utils.LoadEnv()
+	//csv.File_processor()
+	var email notifications.EmailNotification
+	email.RecipientEmail = "dayro.romero@outlook.com"
+	email.Subject = "Transactions Summary"
+	err := notifications.OrchestrateEmailSending(email)
+	if err != nil {
+		log.Printf("Error email ochestation: %v", err)
+	}
 }
