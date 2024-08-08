@@ -2,23 +2,28 @@ package notifications
 
 import (
 	"bytes"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"log"
 	"net/smtp"
 
+	"github.com/dayroromero/storiChallenge/pkg/models"
+	emailrepository "github.com/dayroromero/storiChallenge/pkg/notifications/repository"
 	"github.com/dayroromero/storiChallenge/utils"
 )
 
-// EmailNotification representa un correo electrónico.
+//go:embed templates/summary_account_email.html
+var emailTemplate string
+
 type EmailNotification struct {
 	RecipientEmail string
 	Subject        string
 }
 
-// RenderEmailBody renderiza el cuerpo del correo electrónico utilizando la plantilla y los datos proporcionados.
-func RenderEmailBody(data EmailData) (string, error) {
-	emailTemplate, err := template.ParseFiles("pkg/notifications/templates/summary_account_email.html")
+// RenderEmailBody renders the body of the email using the template and data provided.
+func RenderEmailBody(data models.EmailData) (string, error) {
+	emailTemplate, err := template.New("email").Parse(emailTemplate)
 	if err != nil {
 		log.Printf("error loading email template: %v", err)
 		return "", fmt.Errorf("error loading email template: %v", err)
@@ -26,14 +31,14 @@ func RenderEmailBody(data EmailData) (string, error) {
 
 	var renderedBody bytes.Buffer
 	if err := emailTemplate.Execute(&renderedBody, data); err != nil {
-		log.Printf("error reendering email template: %v", err)
-		return "", fmt.Errorf("error reendering email template: %v", err)
+		log.Printf("error rendering email template: %v", err)
+		return "", fmt.Errorf("error rendering email template: %v", err)
 	}
 
 	return renderedBody.String(), nil
 }
 
-// SendEmail envía un correo electrónico utilizando el cuerpo renderizado y los datos proporcionados.
+// SendEmail sends an email using the rendered body and data provided.
 func SendEmail(notification EmailNotification, body string) error {
 	smtpHost := utils.GetEnvVar("SMTP_HOST")
 	smtpPort := utils.GetEnvVar("SMTP_PORT")
@@ -59,15 +64,9 @@ func SendEmail(notification EmailNotification, body string) error {
 	return nil
 }
 
+// OrchestrateEmailSending orchestrates templating and email sending
 func OrchestrateEmailSending(notification EmailNotification) error {
-	data := EmailData{
-		ClientName:           "Nombre del Cliente",
-		TotalBalance:         39.74,
-		TransactionsInJuly:   2,
-		TransactionsInAugust: 2,
-		AverageDebitAmount:   -15.38,
-		AverageCreditAmount:  35.25,
-	}
+	data := emailrepository.GetSummary(1)
 
 	body, err := RenderEmailBody(data)
 	if err != nil {
@@ -75,8 +74,26 @@ func OrchestrateEmailSending(notification EmailNotification) error {
 	}
 
 	if err := SendEmail(notification, body); err != nil {
-		return fmt.Errorf("error al enviar el correo electrónico: %v", err)
+		return fmt.Errorf("Error sendig email: %v", err)
 	}
 
 	return nil
+}
+
+func SendSummary(UserID int) {
+	user, err := emailrepository.GetUser(UserID)
+	if err != nil {
+		log.Printf("Error getting email from user: %v", err)
+		return
+	}
+
+	email := EmailNotification{
+		RecipientEmail: user.Email,
+		Subject:        "Stori - Transactions Summary",
+	}
+
+	err = OrchestrateEmailSending(email)
+	if err != nil {
+		log.Printf("Error email ochestation: %v", err)
+	}
 }

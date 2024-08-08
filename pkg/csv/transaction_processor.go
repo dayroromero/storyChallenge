@@ -2,11 +2,12 @@ package csv
 
 import (
 	"encoding/csv"
-	"fmt"
 	"log"
-	"os"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/dayroromero/storiChallenge/pkg/db"
 	"github.com/dayroromero/storiChallenge/utils"
 )
@@ -18,30 +19,30 @@ type Transaction struct {
 	Type      string
 }
 
-func File_processor() {
-	file, err := os.Open("transactions.csv")
+func File_processor(bucket string, key string) {
+	sess := session.Must(session.NewSession())
+	svc := s3.New(sess)
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}
+
+	result, err := svc.GetObject(input)
 	if err != nil {
-		fmt.Println("Error opening CSV:", err)
 		return
 	}
-	defer file.Close()
+	defer result.Body.Close()
 
-	reader := csv.NewReader(file)
+	reader := csv.NewReader(result.Body)
 
 	lines, err := reader.ReadAll()
 	if err != nil {
-		fmt.Println("Error reading CSV:", err)
 		return
 	}
 
 	for i, line := range lines {
 		if i == 0 {
 			continue
-		}
-
-		accountID, err := utils.Atoi(line[0])
-		if err != nil {
-			log.Println("Error triying to convert", line[0])
 		}
 
 		date, err := utils.ParseDate(line[1], "2/1/2006")
@@ -62,17 +63,18 @@ func File_processor() {
 		}
 
 		transaction := Transaction{
-			AccountID: accountID,
+			AccountID: 1,
 			Date:      date,
 			Amount:    amount,
 			Type:      transactionType,
 		}
-
-		processTransaction(transaction)
+		log.Println(transaction)
+		saveTransaction(transaction)
 	}
 }
 
-func processTransaction(transaction Transaction) {
+func saveTransaction(transaction Transaction) {
+	log.Println("Saving Transactions into database")
 	db := db.GetInstance().DB
 
 	db.Create(&transaction)

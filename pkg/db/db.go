@@ -4,7 +4,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/dayroromero/storiChallenge/pkg/db/models"
+	"github.com/dayroromero/storiChallenge/pkg/models"
+	"github.com/dayroromero/storiChallenge/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -14,7 +15,22 @@ type Handler struct {
 	DB *gorm.DB
 }
 
+var (
+	once     sync.Once
+	instance Handler
+)
+
+func GetInstance() Handler {
+	dbUrl := utils.GetEnvVar("DBSTRING_CONNECTION")
+	once.Do(func() {
+		instance = Init(dbUrl)
+	})
+
+	return instance
+}
+
 func Init(url string) Handler {
+	log.Println("Init Database")
 	db, err := gorm.Open(postgres.Open(url), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
@@ -38,18 +54,4 @@ func (h *Handler) Close() error {
 		return err
 	}
 	return db.Close()
-}
-
-var (
-	once     sync.Once
-	instance Handler
-)
-
-func GetInstance() Handler {
-	dbUrl := "postgres://postgres:postgres@localhost:5432/stori"
-	once.Do(func() {
-		instance = Init(dbUrl)
-	})
-
-	return instance
 }
